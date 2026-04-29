@@ -1,0 +1,35 @@
+---
+- name: Configure EC2 for Kubernetes
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+
+    - name: Install MicroK8s
+      snap:
+        name: microk8s
+        classic: yes
+
+    - name: Wait for MicroK8s to be ready
+      command: microk8s status --wait-ready
+      register: mk8s_status
+
+    - name: Add user to microk8s group
+      user:
+        name: ubuntu
+        groups: microk8s
+        append: yes
+
+    - name: Enable MicroK8s addons
+      command: microk8s enable dns dashboard storage
