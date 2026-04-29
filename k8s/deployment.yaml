@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: todo-app
-        image: <DOCKER_USERNAME>/todo-app:latest # Replace with actual image
+        image: i221322/todo-app:latest # Replace with actual image
         ports:
         - containerPort: 3000
         env:
