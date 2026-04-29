@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: todo-app
-        image: docker.io/your-dockerhub-username/todo-app:latest
+        image: i221322/todo-app:2fd4808005567b930ca2fb5aaaae9827adc3c79f
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
