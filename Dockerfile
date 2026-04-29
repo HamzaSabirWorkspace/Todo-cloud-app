@@ -1,20 +1,17 @@
-# Use Node.js LTS version as base image
 FROM node:18-slim
 
-# Set working directory
+ENV NODE_ENV=production
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json
 COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
 
-# Install production dependencies
-RUN npm install --production
+COPY --chown=node:node . .
 
-# Copy the rest of the application code
-COPY . .
-
-# Expose the port the app runs on
+USER node
 EXPOSE 3000
 
-# Command to run the application
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
 CMD ["node", "todoServer.js"]

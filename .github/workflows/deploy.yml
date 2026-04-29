@@ -5,42 +5,53 @@ on:
     branches:
       - main
       - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and Push Docker Image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/todo-app:${{ github.sha }}, ${{ secrets.DOCKER_USERNAME }}/todo-app:latest
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/todo-app:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/todo-app:latest
 
   update-manifests:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update Image Tag in K8s Manifest
+        env:
+          IMAGE: ${{ secrets.DOCKER_USERNAME }}/todo-app:${{ github.sha }}
         run: |
-          sed -i "s|<DOCKER_USERNAME>/todo-app:latest|${{ secrets.DOCKER_USERNAME }}/todo-app:${{ github.sha }}|g" k8s/deployment.yaml
+          sed -i -E "s|image: .*todo-app:.*|image: ${IMAGE}|g" k8s/deployment.yaml
 
       - name: Commit and Push Changes
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add k8s/deployment.yaml
-          git commit -m "Update image tag to ${{ github.sha }}"
+          git diff --cached --quiet || git commit -m "Update image tag to ${{ github.sha }}"
           git push

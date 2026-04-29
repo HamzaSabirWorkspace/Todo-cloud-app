@@ -2,6 +2,23 @@ provider "aws" {
   region = "us-east-1"
 }
 
+variable "key_name" {
+  description = "Existing AWS EC2 key pair name used for SSH access."
+  type        = string
+}
+
+variable "ssh_cidr" {
+  description = "CIDR block allowed to connect over SSH."
+  type        = string
+  default     = "0.0.0.0/0"
+}
+
+variable "allowed_app_cidr" {
+  description = "CIDR block allowed to reach the Kubernetes NodePort service."
+  type        = string
+  default     = "0.0.0.0/0"
+}
+
 # VPC
 resource "aws_vpc" "main_vpc" {
   cidr_block = "10.0.0.0/16"
@@ -48,28 +65,21 @@ resource "aws_route_table_association" "main_rta" {
 # Security Group
 resource "aws_security_group" "todo_sg" {
   name        = "todo-sg"
-  description = "Allow SSH and HTTP"
+  description = "Allow SSH and Kubernetes NodePort access"
   vpc_id      = aws_vpc.main_vpc.id
 
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.ssh_cidr]
   }
 
   ingress {
-    from_port   = 80
-    to_port     = 80
+    from_port   = 30000
+    to_port     = 30000
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.allowed_app_cidr]
   }
 
   egress {
@@ -86,7 +96,7 @@ resource "aws_instance" "todo_server" {
   instance_type = "t2.medium"
   subnet_id     = aws_subnet.main_subnet.id
   vpc_security_group_ids = [aws_security_group.todo_sg.id]
-  key_name      = "my-key" # User must change this to their key name
+  key_name      = var.key_name
 
   tags = {
     Name = "todo-instance"
@@ -95,4 +105,8 @@ resource "aws_instance" "todo_server" {
 
 output "public_ip" {
   value = aws_instance.todo_server.public_ip
+}
+
+output "application_url" {
+  value = "http://${aws_instance.todo_server.public_ip}:30000"
 }

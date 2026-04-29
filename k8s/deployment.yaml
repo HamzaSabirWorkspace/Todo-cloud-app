@@ -5,7 +5,7 @@ metadata:
   labels:
     app: todo
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: todo
@@ -16,9 +16,22 @@ spec:
     spec:
       containers:
       - name: todo-app
-        image: i221322/todo-app:latest # Replace with actual image
+        image: docker.io/your-dockerhub-username/todo-app:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
         env:
         - name: NODE_ENV
           value: "production"
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 20

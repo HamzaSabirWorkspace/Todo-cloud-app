@@ -1,10 +1,11 @@
 {
   "name": "02-nodejs",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Cloud deployment ready Node.js ToDo application",
+  "main": "todoServer.js",
   "scripts": {
-    "start": "nodemon todoServer.js"
+    "start": "node todoServer.js",
+    "dev": "nodemon todoServer.js"
   },
   "keywords": [],
   "author": "",
